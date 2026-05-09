@@ -1,7 +1,4 @@
-"use client";
-
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { Menu, X, IceCream } from 'lucide-react';
 
 const Navbar = () => {
@@ -31,20 +28,20 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
-              <Link
+              <a
                 key={link.name}
                 href={link.href}
                 className="text-brand-text hover:text-accent transition-colors font-medium"
               >
                 {link.name}
-              </Link>
+              </a>
             ))}
-            <Link
+            <a
               href="#order"
               className="bg-accent text-white px-6 py-2 rounded-full font-semibold hover:bg-accent/90 transition-all shadow-lg hover:shadow-accent/30 active:scale-95"
             >
               Order Now
-            </Link>
+            </a>
           </div>
 
           {/* Mobile Menu Button */}
@@ -64,22 +61,22 @@ const Navbar = () => {
         <div className="md:hidden absolute top-16 left-0 right-0 bg-primary border-b border-secondary/30 animate-in fade-in slide-in-from-top-4 duration-200">
           <div className="px-4 pt-2 pb-6 space-y-1">
             {navLinks.map((link) => (
-              <Link
+              <a
                 key={link.name}
                 href={link.href}
                 onClick={() => setIsOpen(false)}
                 className="block px-3 py-3 rounded-md text-base font-medium text-brand-text hover:text-accent hover:bg-secondary/10 transition-all"
               >
                 {link.name}
-              </Link>
+              </a>
             ))}
-            <Link
+            <a
               href="#order"
               onClick={() => setIsOpen(false)}
               className="block w-full text-center bg-accent text-white px-6 py-3 rounded-full font-semibold mt-4"
             >
               Order Now
-            </Link>
+            </a>
           </div>
         </div>
       )}
