@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
 
 // Thinking process: This middleware runs before every matched route.
 // It protects private routes (like /profile) from unauthenticated users,
