@@ -23,87 +23,384 @@ enum ProfileType {
   organizer
 }
 
+enum CollegeVerificationStatus {
+  pending
+  verified
+  rejected
+}
+
+enum VerificationRequestStatus {
+  pending
+  approved
+  rejected
+}
+
+enum MembershipRole {
+  student
+  faculty
+  admin
+}
+
+enum EventVerificationSource {
+  self
+  college_verified
+}
+
+enum EventStatus {
+  draft
+  published
+  cancelled
+  completed
+}
+
+enum InteractionType {
+  view
+  click
+  bookmark
+  register
+  attend
+}
+
+enum RegistrationStatus {
+  registered
+  attended
+  cancelled
+}
+
+enum NotificationType {
+  event_recommendation
+  reminder
+  system
+}
+
+enum ReportStatus {
+  pending
+  reviewed
+  dismissed
+  action_taken
+}
+
 model User {
-  id            String     @id @default(cuid())
+  id String @id @default(cuid())
+  name         String
   email         String     @unique
-  name          String?
-  image         String?
   emailVerified Boolean    @default(false)
   status        UserStatus @default(pending)
   lastLoginAt   DateTime?
-
-  accounts Account[]
-  sessions Session[]
-  profiles Profile[]
+  activeProfileId String?  
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("user")
+
+  profiles      Profile[]
+  memberships   CollegeMembership[]
+  interactions  Interaction[]
+  registrations EventRegistration[]
+  notifications Notification[]
+
+  submittedCollegeRequests CollegeVerificationRequest[] @relation("SubmittedRequests")
+
+  reports Report[] @relation("UserReports")
+
+  sessions     Session[]
+  accounts     Account[]
+  userFeatures UserFeature[]
+}
+
+model Profile {
+  id String @id @default(cuid())
+  userId String 
+
+  type        ProfileType
+  displayName String
+  avatarUrl   String?
+
+  isDefault Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  organizerAccess OrganizerAccess?
+  events          Event[]
+}
+
+model College {
+  id String @id @default(cuid())
+  name String
+  slug String @unique
+
+  domain      String? @unique
+  collegeCode String? @unique
+
+  verificationStatus CollegeVerificationStatus @default(pending)
+
+  officialEmail String?
+
+  createdAt  DateTime  @default(now())
+  verifiedAt DateTime?
+
+  memberships CollegeMembership[]
+  events      Event[]
+}
+
+model CollegeVerificationRequest {
+  id String @id @default(cuid())
+  collegeName String
+
+  submittedById String 
+
+  officialEmail String?
+  documentsUrl  String?
+
+  status VerificationRequestStatus @default(pending)
+
+  reviewedBy String?
+  reviewedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  submittedBy User @relation(name: "SubmittedRequests", fields: [submittedById], references: [id])
+}
+
+model CollegeMembership {
+  id String @id @default(cuid())
+  userId    String 
+  collegeId String 
+
+  collegeUniqueId String
+
+  role MembershipRole
+
+  verified   Boolean   @default(false)
+  verifiedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  college College @relation(fields: [collegeId], references: [id])
+
+  organizerAccess OrganizerAccess?
+
+  @@unique([userId, collegeId])
+}
+
+model OrganizerAccess {
+  id String @id @default(cuid())
+  profileId           String @unique 
+  collegeMembershipId String @unique 
+
+  approved   Boolean   @default(false)
+  approvedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  profile    Profile           @relation(fields: [profileId], references: [id])
+  membership CollegeMembership @relation(fields: [collegeMembershipId], references: [id])
+}
+
+model Event {
+  id String @id @default(cuid())
+  title       String
+  description String
+
+  tags String[]
+
+  startTime DateTime
+  endTime   DateTime?
+
+  location String?
+
+  organizerProfileId String 
+  collegeId          String 
+
+  verificationSource EventVerificationSource
+
+  trustScore Float @default(0)
+
+  status EventStatus @default(published)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizer Profile @relation(fields: [organizerProfileId], references: [id])
+
+  college College @relation(fields: [collegeId], references: [id])
+
+  interactions  Interaction[]
+  registrations EventRegistration[]
+
+  analytics EventAnalytics?
+  features  EventFeature?
+
+  reports Report[]
+
+  @@index([startTime])
+  @@index([collegeId])
+}
+
+model Interaction {
+  id String @id @default(cuid())
+  userId  String 
+  eventId String 
+
+  action InteractionType
+
+  sessionId String?
+  metadata  Json?
+
+  timestamp DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId, action])
+}
+
+model EventRegistration {
+  id String @id @default(cuid())
+  eventId String 
+  userId  String 
+
+  status RegistrationStatus
+
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([eventId, userId])
+}
+
+model UserFeature {
+  userId String @id 
+
+  interestVector    Float[]
+  interactionVector Float[]
+
+  lastUpdated DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model EventFeature {
+  eventId String @id 
+
+  tfidfVector Float[]
+
+  popularityScore Float @default(0)
+  freshnessScore  Float @default(0)
+
+  lastUpdated DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id])
+}
+
+model EventAnalytics {
+  eventId String @id 
+
+  viewsCount         Int @default(0)
+  clicksCount        Int @default(0)
+  registrationsCount Int @default(0)
+  attendanceCount    Int @default(0)
+
+  ctr             Float @default(0)
+  engagementScore Float @default(0)
+
+  lastUpdated DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id])
+}
+
+model Notification {
+  id String @id @default(cuid())
+  userId String 
+
+  type NotificationType
+
+  payload Json
+
+  read Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Report {
+  id String @id @default(cuid())
+  eventId    String 
+  reporterId String 
+
+  reason String
+
+  status ReportStatus @default(pending)
+
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id])
+
+  submittedBy User @relation(name: "UserReports", fields: [reporterId], references: [id])
+}
+
+model ChatLog {
+  id String @id @default(cuid())
+  userId String? 
+
+  message  String
+  response String
+
+  createdAt DateTime @default(now())
+}
+
+model Leaderboard {
+  userId String @id 
+
+  score Int  @default(0)
+  rank  Int?
+
+  lastUpdated DateTime @default(now())
 }
 
 model Session {
-  id        String   @id @default(cuid())
+  id String @id @default(cuid())
   token     String   @unique
+  userId    String   
+  activeProfileId String? 
   expiresAt DateTime
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
   ipAddress String?
   userAgent String?
 
-  @@index([userId])
-  @@map("session")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
 }
 
 model Account {
-  id         String @id @default(cuid())
+  id String @id @default(cuid())
   accountId  String
   providerId String
-  userId     String
 
-  accessToken           String?
-  refreshToken          String?
-  idToken               String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
+  userId String 
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken  String?
+  refreshToken String?
+  password     String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  scope     String?
-  password  String?
 
-  @@index([userId])
-  @@map("account")
+  user User @relation(fields: [userId], references: [id])
 }
 
 model Verification {
-  id         String   @id @default(cuid())
+  id String @id @default(cuid())
   identifier String
   value      String
   expiresAt  DateTime
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([identifier])
-  @@map("verification")
-}
-
-model Profile {
-  id          String      @id @default(cuid())
-  userId      String
-  type        ProfileType
-  displayName String
-  avatarUrl   String?
-  isDefault   Boolean     @default(false)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
 }

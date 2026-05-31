@@ -33,14 +33,20 @@ export default function SignupPage() {
   async function onSubmit(values: SignupFormValues) {
     setLoading(true);
     try {
-      await authClient.signUp.email({
+      const { data, error } = await authClient.signUp.email({
         email: values.email,
         password: values.password,
         name: values.name,
       });
+      if (error) {
+        console.error("Signup failed:", error);
+        alert(error.message || "Signup failed");
+        return;
+      }
       window.location.href = "/feed";
     } catch (error) {
-      console.error(error);
+      console.error("Unexpected error:", error);
+      alert("An unexpected error occurred");
     } finally {
       setLoading(false);
     }

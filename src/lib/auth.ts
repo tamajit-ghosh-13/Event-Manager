@@ -28,13 +28,18 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
-          await db.profile.create({
+          const profile = await db.profile.create({
             data: {
               userId: user.id,
               type: "participant",
               displayName: user.name || user.email,
               isDefault: true,
             },
+          });
+
+          await db.user.update({
+            where: { id: user.id },
+            data: { activeProfileId: profile.id },
           });
         },
       },

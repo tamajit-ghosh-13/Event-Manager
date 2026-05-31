@@ -48,7 +48,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950 p-4">
       <AuthCard>
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">Welcome back</h1>
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+            Welcome back
+          </h1>
           <p className="text-neutral-500 dark:text-neutral-400 mt-2">
             Please enter your details to sign in
           </p>
@@ -116,7 +118,10 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-neutral-600 dark:text-neutral-400 mt-8">
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
+          <Link
+            href="/signup"
+            className="text-blue-600 dark:text-blue-400 font-semibold hover:underline"
+          >
             Sign up
           </Link>
         </p>
